@@ -13,6 +13,7 @@ Flask==2.3.3
 flask-cors==6.0.2
 Flask-JWT-Extended==4.7.4
 Flask-Limiter==4.1.1
+Flask-Login==0.6.3
 Flask-Mail==0.10.0
 Flask-Migrate==4.1.0
 flask-smorest==0.42.0

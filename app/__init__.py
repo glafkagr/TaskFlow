@@ -20,8 +20,18 @@
 #     api.register_blueprint(api_bp)
 
 #     return app
-from flask import Flask
+from flask import Flask,session
 from dotenv import load_dotenv
+from flask_login import LoginManager, current_user
+
+# Import models
+from app.models import (
+    User,
+    Project,
+    Task,
+    Comment,
+    Attachment
+)
 
 load_dotenv()
 
@@ -31,11 +41,18 @@ from app.extensions import (
     migrate,
     cors,
     api as smorest_api,
-    mail
+    mail,
+    login_manager
 )
 from app.extensions import limiter
 from app.celery_worker import make_celery
 from config import Config
+
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 def create_app():
@@ -59,6 +76,12 @@ def create_app():
 
     limiter.init_app(app)
     mail.init_app(app)
+    login_manager.init_app(app)
+
+    # Στο create_app() μετά το login_manager.init_app(app):
+    @app.context_processor
+    def inject_user():
+        return dict(current_user=current_user)
 
     # Celery
     celery = make_celery(app)
@@ -67,14 +90,7 @@ def create_app():
     # Import tasks to register them
     from app import tasks
 
-    # Import models
-    from app.models import (
-        User,
-        Project,
-        Task,
-        Comment,
-        Attachment
-    )
+
 
     # Import blueprints
     from app.api import api_bp
@@ -90,5 +106,7 @@ def create_app():
             "status": "ok",
             "service": "TaskFlow"
         }, 200
+
+
 
     return app

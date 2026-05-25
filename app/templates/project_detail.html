@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - TaskFlow{% endblock %}
+
+{% block content %}
+<div x-data="dragDrop()" x-init="initDragDrop()">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <a href="/dashboard" class="text-blue-500 hover:underline">← Back to Projects</a>
+            <h1 class="text-2xl font-bold mt-2">{{ project.name }}</h1>
+            <p class="text-gray-600">{{ project.description or 'No description' }}</p>
+        </div>
+        <button @click="showTaskModal = true"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            + New Task
+        </button>
+    </div>
+
+
+    <!-- Tasks by Status -->
+    <div id="tasks-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Pending Column -->
+        <div class="bg-gray-50 rounded-lg p-4"
+             @dragover.prevent
+             @drop="onDrop($event, 'pending')">
+            <h3 class="font-bold mb-3 text-yellow-600">Pending</h3>
+            <div class="space-y-2">
+                {% for task in tasks if task.status == 'pending' %}
+                <div class="bg-white rounded p-3 shadow cursor-move"
+                     draggable="true"
+                     @dragstart="onDragStart($event, {{ task.id }})"
+                     data-task-id="{{ task.id }}">
+                    <h4 class="font-bold">{{ task.title }}</h4>
+                    <p class="text-sm text-gray-600">{{ task.description or '' }}</p>
+
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-xs px-2 py-1 rounded
+                            {% if task.priority == 'high' %}bg-red-100 text-red-700
+                            {% elif task.priority == 'medium' %}bg-yellow-100 text-yellow-700
+                            {% else %}bg-green-100 text-green-700{% endif %}">
+                            {{ task.priority }}
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <form method="POST" action="/tasks/{{ task.id }}/status" class="inline">
+                                <select name="status" onchange="this.form.submit()" class="text-xs border rounded px-1">
+                                    <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
+                                </select>
+                            </form>
+                            <form method="POST" action="/tasks/{{ task.id }}/delete"
+                                  onsubmit="return confirm('Delete this task?');"
+                                  class="inline">
+                                <button type="submit" class="text-red-500 hover:text-red-700">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="mt-3 pt-2 border-t">
+                        <div class="text-xs text-gray-500 mb-1">Comments ({{ task.comments|length }})</div>
+                        <div id="comments-{{ task.id }}" class="space-y-1 max-h-32 overflow-y-auto">
+                            {% for comment in task.comments %}
+                            <div class="text-xs bg-gray-50 p-1 rounded">
+                                <span class="font-semibold">{{ comment.author.username }}</span>: {{ comment.content }}
+                            </div>
+                            {% else %}
+                            <p class="text-xs text-gray-400">No comments yet</p>
+                            {% endfor %}
+                        </div>
+
+                        <form class="mt-2 flex gap-1"
+                              method="POST"
+                              action="/web/comments/task/{{ task.id }}/create"
+                              hx-post="/web/comments/task/{{ task.id }}/create"
+                              hx-target="#comments-{{ task.id }}"
+                              hx-swap="beforeend"
+                              hx-on::after-request="this.reset()">
+                            <input type="text" name="content" placeholder="Add comment..."
+                                   class="flex-1 text-xs border rounded px-2 py-1"
+                                   required>
+                            <button type="submit" class="bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600">
+                                Post
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Attachments Section -->
+                    <div class="mt-2 pt-2 border-t">
+                        <div class="text-xs text-gray-500 mb-1">Attachments ({{ task.attachments|length }})</div>
+                        <div id="attachments-{{ task.id }}" class="space-y-1">
+                            {% for attachment in task.attachments %}
+                            <div class="text-xs flex justify-between items-center">
+                                <a href="/web/attachments/{{ attachment.id }}/download"
+                                   class="text-blue-500 hover:underline">
+                                    📎 {{ attachment.filename }}
+                                </a>
+                                <button class="text-red-500 hover:text-red-700"
+                                        hx-delete="/web/attachments/{{ attachment.id }}/delete"
+                                        hx-target="#attachments-{{ task.id }}">
+                                    ×
+                                </button>
+                            </div>
+                            {% else %}
+                            <p class="text-xs text-gray-400">No attachments</p>
+                            {% endfor %}
+                        </div>
+
+                        <form class="mt-2"
+                              method="POST"
+                              action="/web/attachments/task/{{ task.id }}/upload"
+                              hx-post="/web/attachments/task/{{ task.id }}/upload"
+                              hx-target="#attachments-{{ task.id }}"
+                              hx-swap="beforeend"
+                              hx-encoding="multipart/form-data">
+                            <div class="flex gap-1">
+                                <input type="file" name="file" accept=".pdf,.txt,.jpg,.png,.docx"
+                                       class="text-xs border rounded px-1 py-1 flex-1"
+                                       required>
+                                <button type="submit" class="bg-green-500 text-white text-xs px-2 py-1 rounded hover:bg-green-600">
+                                    Upload
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-sm">No pending tasks</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- In Progress Column -->
+        <div class="bg-gray-50 rounded-lg p-4"
+             @dragover.prevent
+             @drop="onDrop($event, 'in_progress')">
+            <h3 class="font-bold mb-3 text-blue-600">In Progress</h3>
+            <div class="space-y-2">
+                {% for task in tasks if task.status == 'in_progress' %}
+                <div class="bg-white rounded p-3 shadow cursor-move"
+                     draggable="true"
+                     @dragstart="onDragStart($event, {{ task.id }})"
+                     data-task-id="{{ task.id }}">
+                    <h4 class="font-bold">{{ task.title }}</h4>
+                    <p class="text-sm text-gray-600">{{ task.description or '' }}</p>
+
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-xs px-2 py-1 rounded
+                            {% if task.priority == 'high' %}bg-red-100 text-red-700
+                            {% elif task.priority == 'medium' %}bg-yellow-100 text-yellow-700
+                            {% else %}bg-green-100 text-green-700{% endif %}">
+                            {{ task.priority }}
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <form method="POST" action="/tasks/{{ task.id }}/status" class="inline">
+                                <select name="status" onchange="this.form.submit()" class="text-xs border rounded px-1">
+                                    <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
+                                </select>
+                            </form>
+                            <form method="POST" action="/tasks/{{ task.id }}/delete"
+                                  onsubmit="return confirm('Delete this task?');"
+                                  class="inline">
+                                <button type="submit" class="text-red-500 hover:text-red-700">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="mt-3 pt-2 border-t">
+                        <div class="text-xs text-gray-500 mb-1">Comments ({{ task.comments|length }})</div>
+                        <div id="comments-{{ task.id }}" class="space-y-1 max-h-32 overflow-y-auto">
+                            {% for comment in task.comments %}
+                            <div class="text-xs bg-gray-50 p-1 rounded">
+                                <span class="font-semibold">{{ comment.author.username }}</span>: {{ comment.content }}
+                            </div>
+                            {% else %}
+                            <p class="text-xs text-gray-400">No comments yet</p>
+                            {% endfor %}
+                        </div>
+
+                        <form class="mt-2 flex gap-1"
+                              method="POST"
+                              action="/web/comments/task/{{ task.id }}/create"
+                              hx-post="/web/comments/task/{{ task.id }}/create"
+                              hx-target="#comments-{{ task.id }}"
+                              hx-swap="beforeend"
+                              hx-on::after-request="this.reset()">
+                            <input type="text" name="content" placeholder="Add comment..."
+                                   class="flex-1 text-xs border rounded px-2 py-1"
+                                   required>
+                            <button type="submit" class="bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600">
+                                Post
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Attachments Section -->
+                    <div class="mt-2 pt-2 border-t">
+                        <div class="text-xs text-gray-500 mb-1">Attachments ({{ task.attachments|length }})</div>
+                        <div id="attachments-{{ task.id }}" class="space-y-1">
+                            {% for attachment in task.attachments %}
+                            <div class="text-xs flex justify-between items-center">
+                                <a href="/web/attachments/{{ attachment.id }}/download"
+                                   class="text-blue-500 hover:underline">
+                                    📎 {{ attachment.filename }}
+                                </a>
+                                <button class="text-red-500 hover:text-red-700"
+                                        hx-delete="/web/attachments/{{ attachment.id }}/delete"
+                                        hx-target="#attachments-{{ task.id }}">
+                                    ×
+                                </button>
+                            </div>
+                            {% else %}
+                            <p class="text-xs text-gray-400">No attachments</p>
+                            {% endfor %}
+                        </div>
+
+                        <form class="mt-2"
+                              method="POST"
+                              action="/web/attachments/task/{{ task.id }}/upload"
+                              hx-post="/web/attachments/task/{{ task.id }}/upload"
+                              hx-target="#attachments-{{ task.id }}"
+                              hx-swap="beforeend"
+                              hx-encoding="multipart/form-data">
+                            <div class="flex gap-1">
+                                <input type="file" name="file" accept=".pdf,.txt,.jpg,.png,.docx"
+                                       class="text-xs border rounded px-1 py-1 flex-1"
+                                       required>
+                                <button type="submit" class="bg-green-500 text-white text-xs px-2 py-1 rounded hover:bg-green-600">
+                                    Upload
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-sm">No tasks in progress</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Completed Column -->
+        <div class="bg-gray-50 rounded-lg p-4"
+             @dragover.prevent
+             @drop="onDrop($event, 'completed')">
+            <h3 class="font-bold mb-3 text-green-600">Completed</h3>
+            <div class="space-y-2">
+                {% for task in tasks if task.status == 'completed' %}
+                <div class="bg-white rounded p-3 shadow cursor-move"
+                     draggable="true"
+                     @dragstart="onDragStart($event, {{ task.id }})"
+                     data-task-id="{{ task.id }}">
+                    <h4 class="font-bold">{{ task.title }}</h4>
+                    <p class="text-sm text-gray-600">{{ task.description or '' }}</p>
+
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-xs px-2 py-1 rounded
+                            {% if task.priority == 'high' %}bg-red-100 text-red-700
+                            {% elif task.priority == 'medium' %}bg-yellow-100 text-yellow-700
+                            {% else %}bg-green-100 text-green-700{% endif %}">
+                            {{ task.priority }}
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-green-600">Completed ✓</span>
+                            <form method="POST" action="/tasks/{{ task.id }}/delete"
+                                  onsubmit="return confirm('Delete this task?');"
+                                  class="inline">
+                                <button type="submit" class="text-red-500 hover:text-red-700">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="mt-3 pt-2 border-t">
+                        <div class="text-xs text-gray-500 mb-1">Comments ({{ task.comments|length }})</div>
+                        <div id="comments-{{ task.id }}" class="space-y-1 max-h-32 overflow-y-auto">
+                            {% for comment in task.comments %}
+                            <div class="text-xs bg-gray-50 p-1 rounded">
+                                <span class="font-semibold">{{ comment.author.username }}</span>: {{ comment.content }}
+                            </div>
+                            {% else %}
+                            <p class="text-xs text-gray-400">No comments yet</p>
+                            {% endfor %}
+                        </div>
+
+                        <form class="mt-2 flex gap-1"
+                              method="POST"
+                              action="/web/comments/task/{{ task.id }}/create"
+                              hx-post="/web/comments/task/{{ task.id }}/create"
+                              hx-target="#comments-{{ task.id }}"
+                              hx-swap="beforeend"
+                              hx-on::after-request="this.reset()">
+                            <input type="text" name="content" placeholder="Add comment..."
+                                   class="flex-1 text-xs border rounded px-2 py-1"
+                                   required>
+                            <button type="submit" class="bg-blue-500 text-white text-xs px-2 py-1 rounded hover:bg-blue-600">
+                                Post
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Attachments Section -->
+                    <div class="mt-2 pt-2 border-t">
+                        <div class="text-xs text-gray-500 mb-1">Attachments ({{ task.attachments|length }})</div>
+                        <div id="attachments-{{ task.id }}" class="space-y-1">
+                            {% for attachment in task.attachments %}
+                            <div class="text-xs flex justify-between items-center">
+                                <a href="/web/attachments/{{ attachment.id }}/download"
+                                   class="text-blue-500 hover:underline">
+                                    📎 {{ attachment.filename }}
+                                </a>
+                                <button class="text-red-500 hover:text-red-700"
+                                        hx-delete="/web/attachments/{{ attachment.id }}/delete"
+                                        hx-target="#attachments-{{ task.id }}">
+                                    ×
+                                </button>
+                            </div>
+                            {% else %}
+                            <p class="text-xs text-gray-400">No attachments</p>
+                            {% endfor %}
+                        </div>
+
+                        <form class="mt-2"
+                              method="POST"
+                              action="/web/attachments/task/{{ task.id }}/upload"
+                              hx-post="/web/attachments/task/{{ task.id }}/upload"
+                              hx-target="#attachments-{{ task.id }}"
+                              hx-swap="beforeend"
+                              hx-encoding="multipart/form-data">
+                            <div class="flex gap-1">
+                                <input type="file" name="file" accept=".pdf,.txt,.jpg,.png,.docx"
+                                       class="text-xs border rounded px-1 py-1 flex-1"
+                                       required>
+                                <button type="submit" class="bg-green-500 text-white text-xs px-2 py-1 rounded hover:bg-green-600">
+                                    Upload
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-sm">No completed tasks</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Task Modal -->
+    <div x-show="showTaskModal"
+         class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center"
+         style="display: none;">
+        <div class="bg-white rounded-lg p-6 w-96">
+            <h2 class="text-xl font-bold mb-4">Create New Task</h2>
+
+            <form method="POST" action="/projects/{{ project.id }}/tasks/create">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Task Title</label>
+                    <input type="text" name="title" x-model="taskTitle" required
+                           class="w-full px-3 py-2 border rounded">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Description</label>
+                    <textarea name="description" x-model="taskDesc" rows="3"
+                              class="w-full px-3 py-2 border rounded"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Priority</label>
+                    <select name="priority" x-model="taskPriority" class="w-full px-3 py-2 border rounded">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                    <button type="button" @click="showTaskModal = false"
+                            class="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Create
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function dragDrop() {
+    return {
+        showTaskModal: false,
+        taskTitle: '',
+        taskDesc: '',
+        taskPriority: 'medium',
+        draggedTaskId: null,
+
+        initDragDrop() {
+            // Initialization if needed
+        },
+
+        onDragStart(event, taskId) {
+            this.draggedTaskId = taskId;
+            event.dataTransfer.effectAllowed = 'move';
+        },
+
+        async onDrop(event, newStatus) {
+            event.preventDefault();
+            if (!this.draggedTaskId) return;
+
+            const response = await fetch(`/tasks/${this.draggedTaskId}/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `status=${newStatus}`
+            });
+
+            if (response.ok) {
+                document.body.dispatchEvent(new Event('taskChanged'));
+                location.reload();
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

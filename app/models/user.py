@@ -1,7 +1,8 @@
 from app.extensions import db
 from datetime import datetime
+from flask_login import UserMixin
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -15,6 +16,9 @@ class User(db.Model):
     projects = db.relationship('Project', backref='owner', lazy=True, cascade='all, delete-orphan')
     tasks_assigned = db.relationship('Task', foreign_keys='Task.assigned_to', backref='assignee', lazy=True)
     comments = db.relationship('Comment', backref='author', lazy=True)
+
+    def get_id(self):
+        return str(self.id)
 
     def __repr__(self):
         return f'<User {self.username}>'

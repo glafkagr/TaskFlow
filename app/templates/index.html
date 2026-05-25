@@ -1,10 +1,46 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>TaskFlow</title>
-</head>
-<body>
-    <h1>TaskFlow Home</h1>
-    <p>Jinja works!</p>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Home - TaskFlow{% endblock %}
+
+{% block content %}
+<div class="text-center py-20">
+    <h1 class="text-5xl font-bold text-blue-600 mb-4">TaskFlow</h1>
+    <p class="text-xl text-gray-600 mb-8">Manage your projects and tasks efficiently</p>
+
+    <div class="space-x-4">
+        {% if current_user.is_authenticated %}
+            <a href="/dashboard"
+               class="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition">
+                Go to Dashboard
+            </a>
+        {% else %}
+            <a href="/register"
+               class="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition">
+                Get Started
+            </a>
+            <a href="/login"
+               class="inline-block bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition">
+                Login
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl mb-3">📋</div>
+            <h3 class="font-bold text-lg mb-2">Projects</h3>
+            <p class="text-gray-600">Organize your work into projects</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl mb-3">✅</div>
+            <h3 class="font-bold text-lg mb-2">Tasks</h3>
+            <p class="text-gray-600">Track tasks with status and priority</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="text-3xl mb-3">💬</div>
+            <h3 class="font-bold text-lg mb-2">Comments</h3>
+            <p class="text-gray-600">Collaborate with team comments</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -9,6 +9,7 @@ __pycache__/
 *.db
 *.sqlite
 *.sqlite3
+instance/
 
 # Environment
 .env
@@ -31,5 +32,10 @@ docker-compose.override.yml
 # OS
 .DS_Store
 uploads/
-.env
-uploads/
+migrations/
+
+# Temp files
+odigies.txt
+test.txt
+downloaded.txt
+odigies.txt
