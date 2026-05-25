@@ -19,50 +19,48 @@ TaskFlow is a full-featured project management application built with Flask. It 
 ## Monitoring with Flower
 
 Flower provides a web interface to monitor Celery tasks and workers.
-
-```bash
-# Access Flower dashboard
 http://localhost:5555
 
+
 Features:
+- View task history and status
+- Monitor worker statistics
+- Track task arguments and results
+- Retry failed tasks
 
-View task history and status
+## Tech Stack
 
-Monitor worker statistics
+| Category | Technologies |
+|----------|-------------|
+| Backend | Flask, Flask-Smorest, Flask-SQLAlchemy, Flask-JWT-Extended, Flask-Login |
+| Database | PostgreSQL (production), SQLite (development) |
+| Queue | Celery, Redis |
+| Frontend | Jinja2, HTMX, AlpineJS, Tailwind CSS |
+| Testing | pytest, pytest-flask |
+| Deployment | Docker, docker-compose |
+| Email | Mailtrap (development) |
 
-Track task arguments and results
+## Prerequisites
 
-Retry failed tasks
+- Docker and Docker Compose
+- Python 3.12+ (for local development)
 
-Tech Stack
-Category	Technologies
-Backend	Flask, Flask-Smorest, Flask-SQLAlchemy, Flask-JWT-Extended, Flask-Login
-Database	PostgreSQL (production), SQLite (development)
-Queue	Celery, Redis
-Frontend	Jinja2, HTMX, AlpineJS, Tailwind CSS
-Testing	pytest, pytest-flask
-Deployment	Docker, docker-compose
-Email	Mailtrap (development)
-Prerequisites
-Docker and Docker Compose
+## Quick Start with Docker
 
-Python 3.12+ (for local development)
-
-Quick Start with Docker
-bash
+```bash
 # Clone the repository
 git clone https://github.com/glafkagr/TaskFlow.git
 cd TaskFlow
 
 # Copy environment variables
 cp .env.example .env
-# Edit .env with your Mailtrap credentials (optional)
 
 # Build and run
 docker compose up --build
 
 # Run tests
 docker exec -it taskflow-web-1 pytest -v
+
 Access the application at http://localhost:5000
 
 API Endpoints
@@ -90,7 +88,7 @@ Route	Description
 /project/<id>	Project detail with tasks
 /logout	Logout
 Project Structure
-text
+
 TaskFlow/
 ├── app/
 │   ├── api/           # REST API endpoints
@@ -107,6 +105,7 @@ TaskFlow/
 ├── requirements.txt
 ├── config.py
 └── wsgi.py
+
 Testing
 bash
 # Run tests inside Docker
