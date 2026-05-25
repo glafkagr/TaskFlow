@@ -23,6 +23,7 @@ Flower provides a web interface to monitor Celery tasks and workers.
 ```bash
 # Access Flower dashboard
 http://localhost:5555
+
 Features:
 
 View task history and status
@@ -33,30 +34,24 @@ Track task arguments and results
 
 Retry failed tasks
 
+Tech Stack
+Category	Technologies
+Backend	Flask, Flask-Smorest, Flask-SQLAlchemy, Flask-JWT-Extended, Flask-Login
+Database	PostgreSQL (production), SQLite (development)
+Queue	Celery, Redis
+Frontend	Jinja2, HTMX, AlpineJS, Tailwind CSS
+Testing	pytest, pytest-flask
+Deployment	Docker, docker-compose
+Email	Mailtrap (development)
+Prerequisites
+Docker and Docker Compose
 
+Python 3.12+ (for local development)
 
-## Tech Stack
-
-| Category | Technologies |
-|----------|-------------|
-| Backend | Flask, Flask-Smorest, Flask-SQLAlchemy, Flask-JWT-Extended, Flask-Login |
-| Database | PostgreSQL (production), SQLite (development) |
-| Queue | Celery, Redis |
-| Frontend | Jinja2, HTMX, AlpineJS, Tailwind CSS |
-| Testing | pytest, pytest-flask |
-| Deployment | Docker, docker-compose |
-| Email | Mailtrap (development) |
-
-## Prerequisites
-
-- Docker and Docker Compose
-- Python 3.12+ (for local development)
-
-## Quick Start with Docker
-
-```bash
+Quick Start with Docker
+bash
 # Clone the repository
-git clone https://github.com/yourusername/TaskFlow.git
+git clone https://github.com/glafkagr/TaskFlow.git
 cd TaskFlow
 
 # Copy environment variables
@@ -68,34 +63,32 @@ docker compose up --build
 
 # Run tests
 docker exec -it taskflow-web-1 pytest -v
-
-
 Access the application at http://localhost:5000
 
 API Endpoints
-Method  Endpoint    Description
-POST    /api/v1/auth/register   User registration
-POST    /api/v1/auth/login  User login (returns JWT)
-GET /api/v1/projects/   List user projects
-POST    /api/v1/projects/   Create project
-PUT /api/v1/projects/<id>   Update project
-DELETE  /api/v1/projects/<id>   Delete project
-GET /api/v1/tasks/  List tasks (filter by status/project)
-POST    /api/v1/tasks/  Create task
-PUT /api/v1/tasks/<id>  Update task
-DELETE  /api/v1/tasks/<id>  Delete task
-POST    /api/v1/tasks/<id>/comments/    Add comment
-POST    /api/v1/tasks/<id>/attachments/ Upload attachment
+Method	Endpoint	Description
+POST	/api/v1/auth/register	User registration
+POST	/api/v1/auth/login	User login (returns JWT)
+GET	/api/v1/projects/	List user projects
+POST	/api/v1/projects/	Create project
+PUT	/api/v1/projects/<id>	Update project
+DELETE	/api/v1/projects/<id>	Delete project
+GET	/api/v1/tasks/	List tasks (filter by status/project)
+POST	/api/v1/tasks/	Create task
+PUT	/api/v1/tasks/<id>	Update task
+DELETE	/api/v1/tasks/<id>	Delete task
+POST	/api/v1/tasks/<id>/comments/	Add comment
+POST	/api/v1/tasks/<id>/attachments/	Upload attachment
 API documentation available at http://localhost:5000/api/docs/swagger
 
 Web Routes
-Route   Description
-/   Homepage
-/register   User registration
-/login  User login
-/dashboard  Projects dashboard
-/project/<id>   Project detail with tasks
-/logout Logout
+Route	Description
+/	Homepage
+/register	User registration
+/login	User login
+/dashboard	Projects dashboard
+/project/<id>	Project detail with tasks
+/logout	Logout
 Project Structure
 text
 TaskFlow/
@@ -130,21 +123,17 @@ MAIL_USERNAME=your_mailtrap_username
 MAIL_PASSWORD=your_mailtrap_password
 SECRET_KEY=your-secret-key
 JWT_SECRET_KEY=your-jwt-secret
-Development
-Local Setup (without Docker)
+Development (Local Setup without Docker)
 bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
 flask db init
 flask db migrate -m "Initial migration"
 flask db upgrade
 python wsgi.py
-Screenshots
-Dashboard   Project Detail
-(Add screenshot here)   (Add screenshot here)
 License
 MIT
 
 Author
-[glafkagr] - [https://github.com/glafkagr]
+glafkagr
