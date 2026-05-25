@@ -10,20 +10,6 @@ from app.api.schemas import TaskCreateSchema, TaskResponseSchema
 
 tasks_blp = Blueprint('tasks', __name__, url_prefix='/tasks')
 
-# @tasks_blp.route('/')
-# class TasksList(MethodView):
-#     @jwt_required()
-#     @tasks_blp.response(200, TaskResponseSchema(many=True))
-#     def get(self):
-#         user_id = get_jwt_identity()
-#         if isinstance(user_id, str):
-#             user_id = int(user_id)
-
-#         # Φιλτράρισμα by project (optional)
-#         # Θα το κάνουμε αργότερα
-#         tasks = Task.query.join(Project).filter(Project.user_id == user_id).all()
-#         return tasks
-
 @tasks_blp.route('/')
 class TasksList(MethodView):
     @jwt_required()
@@ -53,27 +39,7 @@ class TasksList(MethodView):
             result.append(task_dict)
 
         return result, 200
-# @tasks_blp.route('/')
-# class TasksList(MethodView):
-#     @jwt_required()
-#     def get(self):
-#         user_id = get_jwt_identity()
-#         if isinstance(user_id, str):
-#             user_id = int(user_id)
 
-#         query = Task.query.join(Project).filter(Project.user_id == user_id)
-
-#         # Φιλτράρισμα
-#         project_id = request.args.get('project_id', type=int)
-#         if project_id:
-#             query = query.filter(Task.project_id == project_id)
-
-#         status = request.args.get('status')
-#         if status:
-#             query = query.filter(Task.status == status)
-
-#         tasks = query.all()
-#         return TaskResponseSchema(many=True).dump(tasks), 200
 
     @jwt_required()
     @tasks_blp.arguments(TaskCreateSchema)
