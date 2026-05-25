@@ -1,0 +1,23 @@
+# Αποθήκευσε το token σε μια μεταβλητή
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc3OTQ2NzAzNiwianRpIjoiMGYyZDM2ZTgtNzRlNi00ZTMxLTgxNzUtNzY5NzFkOTM4NmE5IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6MSwibmJmIjoxNzc5NDY3MDM2LCJjc3JmIjoiMjA4ZTg3MDEtZDg1MC00NDAyLWI3N2MtM2Y3MDMzNzUxOTkwIiwiZXhwIjoxNzc5NDY3OTM2fQ._MocV_7NwDf1qUVfFwvbjzSAH7c2RMvTahe5BjWU63s"
+
+
+Export to CSV (/api/v1/tasks/export/csv)
+Celery + Redis (email reminders)
+HTMX + AlpineJS (frontend)
+
+
+
+Docker + docker-compose (με Postgres, Redis, Celery)    ❌
+Celery + Redis (background tasks)   ❌
+Email reminders (Celery task)   ❌
+Export tasks to CSV ❌
+Export tasks to PDF ❌
+Pytest (tests)  ❌
+
+
+
+Export tasks to CSV
+Celery + Redis (email reminders)
+Pytest (γράψουμε tests)
+Ανεβάσουμε στο GitHub (με τα τρέχοντα)

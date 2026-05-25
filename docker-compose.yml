@@ -1,13 +1,71 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  celery_worker:
+    build: .
+    command: celery -A app.tasks worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://taskflow:taskflow123@postgres:5432/taskflow
+      - CELERY_BROKER_URL=redis://redis:6379/0
+
+  flower:
+    build: .
+    command: celery -A app.celery_worker:celery flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery_worker
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow123
+      POSTGRES_DB: taskflow
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   web:
     build: .
     ports:
       - "5000:5000"
-    volumes:
-      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       - FLASK_ENV=development
-      - SECRET_KEY=dev-secret-key
+      - DATABASE_URL=postgresql://taskflow:taskflow123@postgres:5432/taskflow
+      - SECRET_KEY=docker-secret-key
+      - JWT_SECRET_KEY=docker-jwt-secret
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=rpc://
+    volumes:
+      - .:/app
+      - uploads_volume:/app/uploads
     command: flask run --host=0.0.0.0 --reload
+
+volumes:
+  postgres_data:
+  uploads_volume:
+  redis_data:
