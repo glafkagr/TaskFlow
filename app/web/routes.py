@@ -71,10 +71,6 @@ def dashboard():
     projects = Project.query.filter_by(user_id=current_user.id).all()
     return render_template('dashboard.html', user=current_user, projects=projects)
 
-<<<<<<< HEAD
-
-=======
->>>>>>> d761fa8fa944b3a20101d9a3ccc6af845c8f1930
 @web_bp.route('/projects/create', methods=['POST'])
 @login_required
 def create_project():
@@ -249,11 +245,6 @@ def upload_attachment(task_id):
         </button>
     </div>
     '''
-
-<<<<<<< HEAD
-=======
-
->>>>>>> d761fa8fa944b3a20101d9a3ccc6af845c8f1930
 @web_bp.route('/tasks/<int:task_id>/status', methods=['POST'])
 @login_required
 def update_task_status(task_id):
